@@ -1,0 +1,67 @@
+version: "3.8"
+
+services:
+  localstack:
+    container_name: "${LOCALSTACK_DOCKER_NAME-aws}"
+    image: localstack/localstack
+    ports:
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+    environment:
+      #- DEBUG=${DEBUG-}
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+  postgres:
+    container_name: "${POSTGRESQL_DOCKER_NAME-postgres}"
+    image: postgres
+    restart: always
+    env_file:
+      - postgres.env
+        #    healthcheck:
+        #      test: ["CMD", "PGUSER=postgres", "pg_isready"]
+        #      interval: 5s
+        #      timeout: 3s
+        #      retries: 5
+  mysql:
+    container_name: "${MYSQL_DOCKER_NAME-mysql}"
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  memcached:
+    container_name: "${MEMCACHED_DOCKER_NAME-memcached}"
+    image: memcached
+    ports:
+      - "11211:11211"
+  jenkins:
+    container_name: "${JENKINS_DOCKER_NAME-jenkins}"
+    image: jenkins/jenkins:lts
+    ports:
+    - "8080:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+  ssh-agent:
+    container_name: "${JENKINS_SSH_AGENT_DOCKER_NAME-ssh-agent}"
+    image: jenkins/ssh-agent
+  allure:
+    container_name: "${ALLURE_DOCKER_NAME-allure}"
+    image: "frankescobar/allure-docker-service"
+    environment:
+      CHECK_RESULTS_EVERY_SECONDS: 1
+      KEEP_HISTORY: 1
+    ports:
+      - "5050:5050"
+    volumes:
+      - ${PWD}/allure-results:/app/allure-results
+      - ${PWD}/allure-reports:/app/default-reports
+volumes:
+  jenkins_home:
