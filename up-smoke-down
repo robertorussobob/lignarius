@@ -1,0 +1,6 @@
+#!/bin/sh
+
+sudo -E ./up;
+./smoke-deploy-lambda
+sudo -E ./down
+

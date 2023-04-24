@@ -1,0 +1,18 @@
+#!/bin/sh
+
+. ./common.sh
+
+print "Deploy a Lambda function and an ApiGatway to call it ..."
+sleep $DEMO_SLEEP
+export AWS_DEFAULT_REGION=eu-west-2
+rm -rf ./sam-app
+sam init --no-interactive --name sam-app --runtime python3.9 --dependency-manager pip --app-template hello-world
+(cd sam-app; samlocal build)
+(cd sam-app; samlocal deploy --stack-name sam-app --region eu-west-2 --disable-rollback --no-confirm-changeset --debug)
+print "Call the Lambda function ..."
+sleep $DEMO_SLEEP
+curl -s http://$(awslocal apigateway get-rest-apis | jq -r '.items[0].id').execute-api.localhost.localstack.cloud:4566/Prod/hello/ | jq -c
+print "Remove the AWS stack ..."
+sleep $DEMO_SLEEP
+awslocal cloudformation delete-stack --stack-name sam-app
+sleep $DEMO_SLEEP
