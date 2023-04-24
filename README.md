@@ -1,2 +1,2 @@
 # Lignarius
-Lignarius: a Docker Compose environment with many integrated services
+Lignarius: a Docker Compose integrated environment with many services
