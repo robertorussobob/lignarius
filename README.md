@@ -1,5 +1,5 @@
 # Lignarius
-Lignarius: a Docker Compose integrated environment with many services.
+_Lignarius_: a _Docker Compose_ integrated environment, with many services.
 
 Services available:
 
@@ -10,7 +10,7 @@ Services available:
 - Jenkins;
 - Allure Framework.
 
-Upcoming:
+_Upcoming_:
 
 - ELK/EFK (Elasticsearch, Logstash/Fluentd, Kibana);
 - Redis;
