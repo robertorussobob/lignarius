@@ -1,0 +1,10 @@
+#!/bin/sh
+
+. ./common.sh
+
+./down
+print "Bring UP the multi-container environment ..."
+sleep $DEMO_SLEEP
+docker --log-level "debug" compose up $1 --wait
+print "done bringing UP the multi-container environment."
+

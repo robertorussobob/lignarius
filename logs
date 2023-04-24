@@ -1,0 +1,4 @@
+#!/bin/sh
+
+docker compose --ansi=always logs -f
+

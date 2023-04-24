@@ -1,0 +1,9 @@
+#!/bin/sh
+
+. ./common.sh
+
+print "Bring DOWN the multi-container environment ..."
+sleep ${DEMO_SLEEP}
+docker compose down
+print "done bring DOWN the multi-container environment."
+
