@@ -13,6 +13,7 @@ Services available:
 _Upcoming_:
 
 - ELK/EFK (Elasticsearch, Logstash/Fluentd, Kibana);
+- OpenSearch;
 - Redis;
 - NGINX;
 - MongoDB;
