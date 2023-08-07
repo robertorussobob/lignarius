@@ -24,7 +24,7 @@ _Upcoming_:
 - Wordpress;
 - Gitea.
 
-The following clip show up the system boot, an "hello word" AWS Lambda Function creation, the Lambda invoked, sthe sistem shut down: 
+The following clip show up the system boot, an "hello word" AWS Lambda Function creation, the Lambda invoked, the system shut down: 
 
 https://user-images.githubusercontent.com/29973889/233958079-ad68d8d3-a880-48c4-8e4e-b9eef7250ff9.mp4
 
