@@ -3,26 +3,28 @@ _Lignarius_: a _Docker Compose_ integrated environment, with many services.
 
 Services available:
 
-- Allure Framework.
+- Allure Framework;
+- Gitea;
 - Kafka;
 - Jenkins;
 - Localstack;
 - Memcached;
+- Mongo;
 - MySQL;
 - NGINX;
 - OpenSearch;
+- Portainer;
 - PostgreSQL;
 - Redis;
 - Wordpress;
+- Zookeeper.
 
 _Upcoming_:
 
 - ELK/EFK (Elasticsearch, Logstash/Fluentd, Kibana);
-- Gitea.
 - Grafana;
-- MongoDB;
 - Nextcloud;
-- Prometheus;
+- Prometheus.
 
 The following clip show up the system boot, an "hello word" AWS Lambda Function creation, the Lambda invoked, the system shut down: 
 
