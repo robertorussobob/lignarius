@@ -37,6 +37,11 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+  redis:
+    container_name: "${REDIS_DOCKER_NAME-redis}"
+    image: redis
+    ports:
+      - "6379:6379"
   memcached:
     container_name: "${MEMCACHED_DOCKER_NAME-memcached}"
     image: memcached
@@ -46,7 +51,7 @@ services:
     container_name: "${JENKINS_DOCKER_NAME-jenkins}"
     image: jenkins/jenkins:lts
     ports:
-    - "8080:8080"
+    - "8081:8081"
     volumes:
       - jenkins_home:/var/jenkins_home
   ssh-agent:
@@ -63,5 +68,89 @@ services:
     volumes:
       - ${PWD}/allure-results:/app/allure-results
       - ${PWD}/allure-reports:/app/default-reports
+  nginx:
+    container_name: "${NGINX_DOCKER_NAME-nginx}"
+    image: nginx
+    volumes:
+      - ./templates:/etc/nginx/templates
+    ports:
+      - "8083:8083"
+    environment:
+      - NGINX_HOST=foobar.com
+      - NGINX_PORT=8083
+  wordpress:
+    container_name: "${WORDPRESS_DOCKER_NAME-wordpress}"
+    image: wordpress
+    restart: always
+    ports:
+      - "8082:8082"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: exampleuser
+      WORDPRESS_DB_PASSWORD: examplepass
+      WORDPRESS_DB_NAME: exampledb
+    volumes:
+      - wordpress:/var/www/html
+  opensearch-node1:
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch-node1
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node1
+      - discovery.seed_hosts=opensearch-node1,opensearch-node2
+      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2
+      - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+        hard: 65536
+    volumes:
+      - opensearch-data1:/usr/share/opensearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600 # required for Performance Analyzer
+    networks:
+      - opensearch-net
+  opensearch-node2:
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch-node2
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node2
+      - discovery.seed_hosts=opensearch-node1,opensearch-node2
+      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data2:/usr/share/opensearch/data
+    networks:
+      - opensearch-net
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:latest
+    container_name: opensearch-dashboards
+    ports:
+      - 5601:5601
+    expose:
+      - "5601"
+    environment:
+      OPENSEARCH_HOSTS: '["https://opensearch-node1:9200","https://opensearch-node2:9200"]'
+    networks:
+      - opensearch-net
 volumes:
   jenkins_home:
+  opensearch-data1:
+  opensearch-data2:
+  wordpress:
+networks:
+  opensearch-net:
