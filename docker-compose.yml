@@ -199,8 +199,8 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: example
       ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
   gitea:
-    image: gitea/gitea:1.20.3
     container_name: gitea
+    image: gitea/gitea:1.20.3
     environment:
       - USER_UID=1000
       - USER_GID=1000
@@ -215,6 +215,7 @@ services:
       - "3000:3000"
       - "222:22"
   portainer:
+    container_name: portainer
     image: portainer/portainer-ce:latest
     ports:
       - "9443:9443"
