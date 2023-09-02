@@ -4,6 +4,7 @@ _Lignarius_: a _Docker Compose_ integrated environment, with many services.
 Services available:
 
 - Allure Framework.
+- Kafka;
 - Jenkins;
 - Localstack;
 - Memcached;
@@ -19,7 +20,6 @@ _Upcoming_:
 - ELK/EFK (Elasticsearch, Logstash/Fluentd, Kibana);
 - Gitea.
 - Grafana;
-- Kafka;
 - MongoDB;
 - Nextcloud;
 - Prometheus;
