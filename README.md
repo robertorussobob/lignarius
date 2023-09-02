@@ -1,6 +1,8 @@
 # Lignarius
 _Lignarius_: a _Docker Compose_ integrated environment, with many services.
 
+[![asciicast](./ligrarus-ascii.cast)](./ligrarus-ascii.cast)
+
 Services available:
 
 - Allure Framework;
