@@ -10,3 +10,5 @@ print () {
   printf "${BRIGHT_RED}>>> ${COLOR}$1${NC}\n";
 }
 
+export LIGNARIUS_HOST=localhost
+
