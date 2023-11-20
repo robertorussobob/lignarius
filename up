@@ -7,4 +7,10 @@ print "Bring UP the multi-container environment ..."
 sleep $DEMO_SLEEP
 docker --log-level "debug" compose up $1 --wait
 print "done bringing UP the multi-container environment."
+print "Configure the multi-container environment ..."
+sleep $DEMO_SLEEP
+./configure
+print "done configuring the multi-container environment."
+
+print "Portainer: (admin/adminadminadmin) https://localhost:9443/#!/1/docker/containers"
 
