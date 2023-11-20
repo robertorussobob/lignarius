@@ -1,0 +1,13 @@
+#!/bin/sh
+
+. ./common.sh
+
+print "Create portainer admin user [admin/adminadminadmin] (3 times) ..."
+https --verify=no ${LIGNARIUS_HOST}:9443/api/users/admin/init Username="admin" Password="adminadminadmin"
+print "done."
+print "Add local environment via the Docker socket ..."
+export PORTAINER_TOKEN=$(https --verify=no POST https://localhost:9443/api/auth Username="admin" Password="adminadminadmin" | jq -r '.jwt')
+https --verify=no --form POST ${LIGNARIUS_HOST}:9443/api/endpoints \
+    "Authorization: Bearer ${PORTAINER_TOKEN}" \
+    Name="local" EndpointCreationType=1
+print "done."
