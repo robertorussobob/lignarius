@@ -1,0 +1,14 @@
+#!/bin/sh
+
+. ./common.sh
+
+print "localstack"
+sleep $DEMO_SLEEP
+export AWS_DEFAULT_REGION=eu-west-2
+http :4566/health
+
+print "portainer"
+export PORTAINER_TOKEN=$(https --verify=no POST https://localhost:9443/api/auth Username="admin" Password="adminadminadmin" | jq -r '.jwt')
+https --verify=no GET ${LIGNARIUS_HOST}:9443/api/endpoints/1/docker/containers/json \
+    X-API-Key:${PORTAINER_TOKEN} \
+    all==true
