@@ -17,6 +17,8 @@ services:
   postgres:
     container_name: "${POSTGRESQL_DOCKER_NAME-postgres}"
     image: postgres
+    ports:
+      - "5432:5432"
     restart: always
     env_file:
       - postgres.env
