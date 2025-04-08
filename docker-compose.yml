@@ -12,6 +12,10 @@ services:
     volumes:
       - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
+    profiles:
+      - aws
+      - aws_rds
+      - aws_rds_caches
   postgres:
     container_name: "${POSTGRESQL_DOCKER_NAME-postgres}"
     image: postgres
@@ -25,6 +29,10 @@ services:
         #      interval: 5s
         #      timeout: 3s
         #      retries: 5
+    profiles:
+      - postgres
+      - aws_rds
+      - aws_rds_caches
   mysql:
     container_name: "${MYSQL_DOCKER_NAME-mysql}"
     image: mysql
@@ -37,16 +45,23 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    profiles:
+      - mysql
   redis:
     container_name: "${REDIS_DOCKER_NAME-redis}"
     image: redis
     ports:
       - "6379:6379"
+    profiles:
+      - caches
+      - aws_rds_caches
   memcached:
     container_name: "${MEMCACHED_DOCKER_NAME-memcached}"
     image: memcached
     ports:
       - "11211:11211"
+    profiles:
+      - caches
   jenkins:
     container_name: "${JENKINS_DOCKER_NAME-jenkins}"
     image: jenkins/jenkins:lts
@@ -54,10 +69,14 @@ services:
     - "8081:8081"
     volumes:
       - jenkins_home:/var/jenkins_home
+    profiles:
+      - jenkins
   ssh-agent:
     container_name: "${JENKINS_SSH_AGENT_DOCKER_NAME-ssh-agent}"
     image: jenkins/ssh-agent
     depends_on:
+      - jenkins
+    profiles:
       - jenkins
   allure:
     container_name: "${ALLURE_DOCKER_NAME-allure}"
@@ -70,6 +89,8 @@ services:
     volumes:
       - ${PWD}/allure-results:/app/allure-results
       - ${PWD}/allure-reports:/app/default-reports
+    profiles:
+      - allure
   nginx:
     container_name: "${NGINX_DOCKER_NAME-nginx}"
     image: nginx
@@ -80,6 +101,8 @@ services:
     environment:
       - NGINX_HOST=foobar.com
       - NGINX_PORT=8083
+    profiles:
+      - nginx
   wordpress:
     container_name: "${WORDPRESS_DOCKER_NAME-wordpress}"
     image: wordpress
@@ -93,6 +116,8 @@ services:
       WORDPRESS_DB_NAME: exampledb
     volumes:
       - wordpress:/var/www/html
+    profiles:
+      - wordpress
   opensearch-node1:
     image: opensearchproject/opensearch:latest
     container_name: opensearch-node1
@@ -117,6 +142,8 @@ services:
       - 9600:9600 # required for Performance Analyzer
     networks:
       - opensearch-net
+    profiles:
+      - opensearch
   opensearch-node2:
     image: opensearchproject/opensearch:latest
     container_name: opensearch-node2
@@ -138,6 +165,8 @@ services:
       - opensearch-data2:/usr/share/opensearch/data
     networks:
       - opensearch-net
+    profiles:
+      - opensearch
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:latest
     container_name: opensearch-dashboards
@@ -149,6 +178,8 @@ services:
       OPENSEARCH_HOSTS: '["https://opensearch-node1:9200","https://opensearch-node2:9200"]'
     networks:
       - opensearch-net
+    profiles:
+      - opensearch
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.2
     hostname: zookeeper
@@ -159,6 +190,8 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_SERVERS: zookeeper:2888:3888
+    profiles:
+      - kafka
   kafka:
     image: confluentinc/cp-kafka:7.3.2
     hostname: kafka1
@@ -183,6 +216,8 @@ services:
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
     depends_on:
       - zookeeper
+    profiles:
+      - kafka
   mongo:
     container_name: mongo
     image: mongo
@@ -190,6 +225,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
+    profiles:
+      - mongo
   mongo-express:
     container_name: mongo-express
     image: mongo-express
@@ -201,6 +238,8 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: example
       ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
     depends_on:
+      - mongo
+    profiles:
       - mongo
   gitea:
     container_name: gitea
@@ -218,6 +257,8 @@ services:
     ports:
       - "3000:3000"
       - "222:22"
+    profiles:
+      - gitea
   portainer:
     container_name: portainer
     image: portainer/portainer-ce:latest
