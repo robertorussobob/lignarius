@@ -29,3 +29,10 @@ _Upcoming_:
 - Grafana;
 - Nextcloud;
 - Prometheus.
+
+## Usage examples
+
+# starts localstack, postgresql, redis
+$ export COMPOSE_PROFILES=aws_rds_caches 
+$ ./up
+
