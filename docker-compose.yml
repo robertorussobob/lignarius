@@ -16,6 +16,7 @@ services:
       - aws
       - aws_rds
       - aws_rds_caches
+      - aws_rds_caches_stream
   postgres:
     container_name: "${POSTGRESQL_DOCKER_NAME-postgres}"
     image: postgres
@@ -33,6 +34,7 @@ services:
       - postgres
       - aws_rds
       - aws_rds_caches
+      - aws_rds_caches_stream
   mysql:
     container_name: "${MYSQL_DOCKER_NAME-mysql}"
     image: mysql
@@ -55,6 +57,7 @@ services:
     profiles:
       - caches
       - aws_rds_caches
+      - aws_rds_caches_stream
   memcached:
     container_name: "${MEMCACHED_DOCKER_NAME-memcached}"
     image: memcached
@@ -192,6 +195,7 @@ services:
       ZOOKEEPER_SERVERS: zookeeper:2888:3888
     profiles:
       - kafka
+      - aws_rds_caches_stream
   kafka:
     image: confluentinc/cp-kafka:7.3.2
     hostname: kafka1
@@ -218,6 +222,7 @@ services:
       - zookeeper
     profiles:
       - kafka
+      - aws_rds_caches_stream
   mongo:
     container_name: mongo
     image: mongo
