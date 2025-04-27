@@ -1,6 +1,7 @@
 name: lignarius
 
 services:
+
   localstack:
     container_name: "${LOCALSTACK_DOCKER_NAME-aws}"
     image: localstack/localstack
@@ -15,6 +16,7 @@ services:
       - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
     profiles: [localstack, all-no-ui, all]
+
   postgres:
     container_name: "${POSTGRESQL_DOCKER_NAME-postgres}"
     image: postgres
@@ -29,6 +31,7 @@ services:
         #      timeout: 3s
         #      retries: 5
     profiles: [ postgres, postgres-all, all, all-no-ui ]
+
   mysql:
     container_name: "${MYSQL_DOCKER_NAME-mysql}"
     image: mysql
@@ -42,18 +45,21 @@ services:
       timeout: 3s
       retries: 5
     profiles: [ mysql, all, all-no-ui ]
+
   redis:
     container_name: "${REDIS_DOCKER_NAME-redis}"
     image: redis
     ports:
       - "6379:6379"
     profiles: [ redis, all, all-no-ui ]
+
   memcached:
     container_name: "${MEMCACHED_DOCKER_NAME-memcached}"
     image: memcached
     ports:
       - "11211:11211"
     profiles: [ memcached, all, all-no-ui ]
+
   jenkins:
     container_name: "${JENKINS_DOCKER_NAME-jenkins}"
     image: jenkins/jenkins:lts
@@ -62,12 +68,14 @@ services:
     volumes:
       - jenkins_home:/var/jenkins_home
     profiles: [ jenkins, jenkins-all, all-no-ui, all ]
+
   ssh-agent:
     container_name: "${JENKINS_SSH_AGENT_DOCKER_NAME-ssh-agent}"
     image: jenkins/ssh-agent
     depends_on:
       - jenkins
     profiles: [ ssh-agent, jenkins-all,  all-no-ui, all ]
+
   allure:
     container_name: "${ALLURE_DOCKER_NAME-allure}"
     image: "frankescobar/allure-docker-service"
@@ -80,6 +88,7 @@ services:
       - ${PWD}/allure-results:/app/allure-results
       - ${PWD}/allure-reports:/app/default-reports
     profiles: [ allure, all-no-ui, all ]
+
   nginx:
     container_name: "${NGINX_DOCKER_NAME-nginx}"
     image: nginx
@@ -91,6 +100,7 @@ services:
       - NGINX_HOST=foobar.com
       - NGINX_PORT=8083
     profiles: [ nginx, all-no-ui, all ]
+
   wordpress:
     container_name: "${WORDPRESS_DOCKER_NAME-wordpress}"
     image: wordpress
@@ -105,6 +115,7 @@ services:
     volumes:
       - wordpress:/var/www/html
     profiles: [ wordpress, all-no-ui, all ]
+
   opensearch-node1:
     image: opensearchproject/opensearch:latest
     container_name: opensearch-node1
@@ -130,6 +141,7 @@ services:
     networks:
       - opensearch-net
     profiles: [ opensearch, all-no-ui, all ]
+
   opensearch-node2:
     image: opensearchproject/opensearch:latest
     container_name: opensearch-node2
@@ -152,6 +164,7 @@ services:
     networks:
       - opensearch-net
     profiles: [ opensearch, all-no-ui, all ]
+
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:latest
     container_name: opensearch-dashboards
@@ -165,6 +178,7 @@ services:
       - opensearch-net
     depends_on: [ opensearch-node1, opensearch-node2 ]
     profiles: [ opensearch, opensearch-all, all ]
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.2
     hostname: zookeeper
@@ -176,10 +190,11 @@ services:
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_SERVERS: zookeeper:2888:3888
     profiles: [ zookeeper, kafka-all, all-no-ui, all ]
-  kafka:
+
+  kafka_confluent:
     image: confluentinc/cp-kafka:7.3.2
-    hostname: kafka1
-    container_name: kafka
+    hostname: kafka_confluent
+    container_name: kafka_confluent
     ports:
       - "9092:9092"
       - "29092:29092"
@@ -200,7 +215,40 @@ services:
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
     depends_on:
       - zookeeper
-    profiles: [ kafka, kafka-all, all-no-ui, all ]
+    profiles: [ kafka_confluent, kafka_confluent-all, all-no-ui, all ]
+    
+  kafka:
+    image: 'bitnami/kafka:latest'
+    hostname: kafka
+    container_name: kafka
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+    profiles: [ kafka, kafka-no-ui, kafka-all, all-no-ui, all ]
+    
+  kafka-ui:  # TODO: it exits suddenly
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 8080:8080
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092  # TODO check
+      KAFKA_CLUSTERS_0_METRICS_PORT: 9997
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schemaregistry0:8085
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: first
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka-connect0:8083
+      DYNAMIC_CONFIG_ENABLED: true
+    volumes:
+      - ./kui/config.yml:/etc/kafkaui/dynamic_config.yaml
+    profiles: [ kafka, kafka-all, all ]
+
   mongo:
     container_name: mongo
     image: mongo
@@ -208,7 +256,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
-    profiles: [ mongo, mongo-all, all-no-ui, all ]
+    profiles: [ mongo, mongo-no-ui, mongo-all, all-no-ui, all ]
+
   mongo-express:
     container_name: mongo-express
     image: mongo-express
@@ -219,7 +268,8 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: example
       ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
-    profiles: [ mongo-ui, mongo-all, all-no-ui, all ]
+    profiles: [ mongo-ui, mongo-all, all ]
+
   gitea:
     container_name: gitea
     image: gitea/gitea:1.20.3
@@ -237,6 +287,7 @@ services:
       - "3000:3000"
       - "222:22"
     profiles: [ gitea, all ]
+
   portainer:
     container_name: portainer
     image: portainer/portainer-ce:latest
@@ -246,12 +297,14 @@ services:
       - data:/data
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
+
 volumes:
   data:
   jenkins_home:
   opensearch-data1:
   opensearch-data2:
   wordpress:
+
 networks:
   opensearch-net:
   gitea:
