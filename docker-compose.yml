@@ -189,7 +189,7 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_SERVERS: zookeeper:2888:3888
-    profiles: [ zookeeper, kafka-all, all-no-ui, all ]
+    profiles: [ zookeeper, all-no-ui, all ]
 
   kafka_confluent:
     image: confluentinc/cp-kafka:7.3.2
@@ -228,6 +228,8 @@ services:
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_LOG4J_ROOT_LOGLEVEL=ERROR # CHECK
+      - KAFKA_LOG4J_TOOLS_LOGLEVEL=ERROR # CHECK
     profiles: [ kafka, kafka-no-ui, kafka-all, all-no-ui, all ]
     
   kafka-ui:  # TODO: it exits suddenly
@@ -297,6 +299,7 @@ services:
       - data:/data
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
+    profiles: [ all ]
 
 volumes:
   data:
