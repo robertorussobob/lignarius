@@ -299,7 +299,7 @@ services:
       - data:/data
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
-    profiles: [ all ]
+    profiles: [ portainer, all ]
 
 volumes:
   data:
