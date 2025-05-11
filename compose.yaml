@@ -9,7 +9,6 @@ services:
       - "127.0.0.1:4566:4566"            # LocalStack Gateway
       - "127.0.0.1:4510-4559:4510-4559"  # external services port range
     environment:
-      #- DEBUG=${DEBUG-}
       - DEBUG=1
       - DOCKER_HOST=unix:///var/run/docker.sock
     volumes:
@@ -301,8 +300,91 @@ services:
     restart: unless-stopped
     profiles: [ portainer, all ]
 
+  cadvisor:
+    container_name: cadvisor
+    image: gcr.io/cadvisor/cadvisor-amd64:v0.52.1
+    network_mode: "host"
+    privileged: true
+    ports: [ "8080:8080" ]
+    volumes:
+      - "/:/rootfs"
+      - "/var/run:/var/run"
+      - "/sys:/sys"
+      - "/var/lib/docker/:/var/lib/docker"
+      - "/dev/disk/:/dev/disk"
+    devices: [ "/dev/kmsg" ]
+    profiles: [ cadvisor, monitoring, all ]
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    network_mode: "host"
+    ports: [ "9090:9090" ]
+    volumes:
+      - "./config/prometheus.yml:/etc/prometheus/prometheus.yml"
+    privileged: true
+    restart: on-failure
+    depends_on: [ cadvisor ]
+    profiles: [ prometheus, monitoring, all ]
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    network_mode: "host"
+    ports: [ "3000:3000" ]
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - DS_PROMETHEUS=prometheus
+    volumes:
+      - "grafana-data:/var/lib/grafana"
+      - "./config/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
+      - "./config/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
+      - "./config/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
+    privileged: true
+    restart: on-failure
+    depends_on: [ prometheus ]
+    profiles: [ grafana, monitoring, all ]
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    ports: [ "8999:8999" ]
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=postgres@example.com
+      - PGADMIN_DEFAULT_PASSWORD=postgres
+      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+      - PGADMIN_LISTEN_PORT=8999
+    restart: on-failure
+    depends_on: [ postgres ]
+    profiles: [ pgadmin, potsgres-all, monitoring, all ]
+    entrypoint: /bin/sh -c "chmod 600 /pgpass; /entrypoint.sh;"
+    user: root
+    configs:
+      - source: servers.json
+        target: /pgadmin4/servers.json
+      - source: pgpass
+        target: /pgpass
+
+configs:
+  pgpass:
+    content: postgres:5432:*:postgres:postgres
+  servers.json:
+    content: |
+      {"Servers": {"1": {
+        "Group": "Servers",
+        "Name": "postgres",
+        "Host": "postgres",
+        "Port": 5432,
+        "MaintenanceDB": "postgres",
+        "Username": "postgres",
+        "PassFile": "/pgpass",
+        "SSLMode": "prefer"
+      }}}
+
 volumes:
   data:
+  grafana-data:
   jenkins_home:
   opensearch-data1:
   opensearch-data2:
