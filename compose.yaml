@@ -19,6 +19,8 @@ services:
   postgres:
     container_name: "${POSTGRESQL_DOCKER_NAME-postgres}"
     image: postgres
+    volumes:
+      - ./mount/postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     restart: always
