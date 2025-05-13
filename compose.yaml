@@ -359,7 +359,7 @@ services:
       - PGADMIN_LISTEN_PORT=8999
     restart: on-failure
     depends_on: [ postgres ]
-    profiles: [ pgadmin, potsgres-all, monitoring, all ]
+    profiles: [ pgadmin, postgres-all, monitoring, all ]
     entrypoint: /bin/sh -c "chmod 600 /pgpass; /entrypoint.sh;"
     user: root
     configs:
