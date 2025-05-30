@@ -31,7 +31,7 @@ services:
         #      interval: 5s
         #      timeout: 3s
         #      retries: 5
-    command: postgres -d 2 -c log_statement=all -c log_min_messages=DEBUG2
+    command: ["postgres", "-d", "2", "-c", "log_statement=all", "-c", "log_min_messages=DEBUG2"]
     profiles: [ postgres, postgres-all, all, all-no-ui ]
 
   mysql:
