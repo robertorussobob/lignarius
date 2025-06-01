@@ -9,6 +9,7 @@ Services available:
 
 - Allure Framework;
 - Gitea;
+- Grafana;
 - Kafka;
 - Jenkins;
 - Localstack;
@@ -19,16 +20,16 @@ Services available:
 - OpenSearch;
 - Portainer;
 - PostgreSQL;
+- Prometheus;
 - Redis;
 - Wordpress;
 - Zookeeper.
 
-_Upcoming_:
+- Upcoming:
 
-- ELK/EFK (Elasticsearch, Logstash/Fluentd, Kibana);
-- Grafana;
+- ELK/EFK (Elasticsearch, Logstash/Fluentd, Kibana)
+- Apache Flink);
 - Nextcloud;
-- Prometheus.
 
 ## Usage examples
 
