@@ -2,19 +2,50 @@ name: lignarius
 
 services:
 
-  localstack:
-    container_name: "${LOCALSTACK_DOCKER_NAME-aws}"
-    image: public.ecr.aws/localstack/localstack:latest
-    ports:
-      - "127.0.0.1:4566:4566"            # LocalStack Gateway
-      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
-    environment:
-      - DEBUG=1
-      - DOCKER_HOST=unix:///var/run/docker.sock
+  cadvisor:
+    container_name: cadvisor
+    image: public.ecr.aws/bitnami/cadvisor:0.52.1-debian-12-r5
+    network_mode: "host"
+    privileged: true
+    ports: [ "9999:8080" ]
     volumes:
-      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    profiles: [localstack, all-no-ui, all]
+      - "/:/rootfs"
+      - "/var/run:/var/run"
+      - "/sys:/sys"
+      - "/var/lib/docker/:/var/lib/docker"
+      - "/dev/disk/:/dev/disk"
+    devices: [ "/dev/kmsg" ]
+    profiles: [ cadvisor, monitoring, all ]
+
+  prometheus:
+    container_name: prometheus
+    image: public.ecr.aws/bitnami/prometheus:3.4.0-debian-12-r1
+    network_mode: "host"
+    ports: [ "9998:9090" ]
+    volumes:
+      - "./config/prometheus.yml:/etc/prometheus/prometheus.yml"
+    privileged: true
+    restart: on-failure
+    depends_on: [ cadvisor ]
+    profiles: [ prometheus, monitoring, all ]
+
+  grafana:
+    container_name: grafana
+    image: public.ecr.aws/bitnami/grafana:12.0.0-debian-12-r1
+    network_mode: "host"
+    ports: [ "9997:3000" ]
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - DS_PROMETHEUS=prometheus
+    volumes:
+      - "grafana-data:/var/lib/grafana"
+      - "./config/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
+      - "./config/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
+      - "./config/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
+    privileged: true
+    restart: on-failure
+    depends_on: [ prometheus ]
+    profiles: [ grafana, monitoring, all ]
 
   postgres:
     container_name: "${POSTGRESQL_DOCKER_NAME-postgres}"
@@ -22,7 +53,7 @@ services:
     volumes:
       - ./mount/postgres-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "8001:5432"
     restart: always
     env_file:
       - postgres.env
@@ -33,6 +64,41 @@ services:
         #      retries: 5
     command: ["postgres", "-d", "2", "-c", "log_statement=all", "-c", "log_min_messages=DEBUG2"]
     profiles: [ postgres, postgres-all, all, all-no-ui ]
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    ports: [ "9001:8999" ]
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=postgres@example.com
+      - PGADMIN_DEFAULT_PASSWORD=postgres
+      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+      - PGADMIN_LISTEN_PORT=8999
+    restart: on-failure
+    depends_on: [ postgres ]
+    profiles: [ pgadmin, postgres-all, monitoring, all ]
+    entrypoint: /bin/sh -c "chmod 600 /pgpass; /entrypoint.sh;"
+    user: root
+    configs:
+      - source: servers.json
+        target: /pgadmin4/servers.json
+      - source: pgpass
+        target: /pgpass
+
+  localstack:
+    container_name: "${LOCALSTACK_DOCKER_NAME-aws}"
+    image: public.ecr.aws/localstack/localstack:latest
+    ports:
+      - "127.0.0.1:8002:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+    environment:
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    profiles: [localstack, all-no-ui, all]
 
   mysql:
     container_name: "${MYSQL_DOCKER_NAME-mysql}"
@@ -52,21 +118,21 @@ services:
     container_name: "${REDIS_DOCKER_NAME-redis}"
     image: public.ecr.aws/docker/library/redis:8.0.1-alpine3.21
     ports:
-      - "6379:6379"
+      - "8003:6379"
     profiles: [ redis, all, all-no-ui ]
 
   memcached:
     container_name: "${MEMCACHED_DOCKER_NAME-memcached}"
     image: public.ecr.aws/docker/library/memcached:1.6.38-alpine3.21
     ports:
-      - "11211:11211"
+      - "8004:11211"
     profiles: [ memcached, all, all-no-ui ]
 
   jenkins:
     container_name: "${JENKINS_DOCKER_NAME-jenkins}"
     image: jenkins/jenkins:lts
     ports:
-    - "8081:8081"
+    - "9002:8081"
     volumes:
       - jenkins_home:/var/jenkins_home
     profiles: [ jenkins, jenkins-all, all-no-ui, all ]
@@ -85,7 +151,7 @@ services:
       CHECK_RESULTS_EVERY_SECONDS: 1
       KEEP_HISTORY: 1
     ports:
-      - "5050:5050"
+      - "9003:5050"
     volumes:
       - ${PWD}/allure-results:/app/allure-results
       - ${PWD}/allure-reports:/app/default-reports
@@ -97,7 +163,7 @@ services:
     volumes:
       - ./templates:/etc/nginx/templates
     ports:
-      - "8083:8083"
+      - "8005:8083"
     environment:
       - NGINX_HOST=foobar.com
       - NGINX_PORT=8083
@@ -108,7 +174,7 @@ services:
     image: wordpress
     restart: always
     ports:
-      - "8082:8082"
+      - "9004:8082"
     environment:
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_USER: exampleuser
@@ -239,7 +305,7 @@ services:
     container_name: kafka-ui
     image: provectuslabs/kafka-ui:latest
     ports:
-      - 8080:8080
+      - 9005:8080
     depends_on:
       - kafka
     environment:
@@ -268,7 +334,7 @@ services:
     image: mongo-express
     restart: always
     ports:
-      - 8084:8084
+      - 9006:8084
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: example
@@ -289,89 +355,20 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
-      - "3000:3000"
-      - "222:22"
+      - "9007:3000"
+      - "8006:22"
     profiles: [ gitea, all ]
 
   portainer:
     container_name: portainer
     image: portainer/portainer-ce:latest
     ports:
-      - "9443:9443"
+      - "9996:9443"
     volumes:
       - data:/data
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
     profiles: [ portainer, all ]
-
-  cadvisor:
-    container_name: cadvisor
-    #image: gcr.io/cadvisor/cadvisor-amd64:v0.52.1
-    image: public.ecr.aws/bitnami/cadvisor:0.52.1-debian-12-r5
-    network_mode: "host"
-    privileged: true
-    ports: [ "8080:8080" ]
-    volumes:
-      - "/:/rootfs"
-      - "/var/run:/var/run"
-      - "/sys:/sys"
-      - "/var/lib/docker/:/var/lib/docker"
-      - "/dev/disk/:/dev/disk"
-    devices: [ "/dev/kmsg" ]
-    profiles: [ cadvisor, monitoring, all ]
-
-  prometheus:
-    container_name: prometheus
-    #image: prom/prometheus:latest
-    image: public.ecr.aws/bitnami/prometheus:3.4.0-debian-12-r1
-    network_mode: "host"
-    ports: [ "9090:9090" ]
-    volumes:
-      - "./config/prometheus.yml:/etc/prometheus/prometheus.yml"
-    privileged: true
-    restart: on-failure
-    depends_on: [ cadvisor ]
-    profiles: [ prometheus, monitoring, all ]
-
-  grafana:
-    container_name: grafana
-    #image: grafana/grafana:latest
-    image: public.ecr.aws/bitnami/grafana:12.0.0-debian-12-r1
-    network_mode: "host"
-    ports: [ "3000:3000" ]
-    environment:
-      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
-      - DS_PROMETHEUS=prometheus
-    volumes:
-      - "grafana-data:/var/lib/grafana"
-      - "./config/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
-      - "./config/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
-      - "./config/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
-    privileged: true
-    restart: on-failure
-    depends_on: [ prometheus ]
-    profiles: [ grafana, monitoring, all ]
-
-  pgadmin:
-    container_name: pgadmin
-    image: dpage/pgadmin4:latest
-    ports: [ "8999:8999" ]
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=postgres@example.com
-      - PGADMIN_DEFAULT_PASSWORD=postgres
-      - PGADMIN_CONFIG_SERVER_MODE=False
-      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
-      - PGADMIN_LISTEN_PORT=8999
-    restart: on-failure
-    depends_on: [ postgres ]
-    profiles: [ pgadmin, postgres-all, monitoring, all ]
-    entrypoint: /bin/sh -c "chmod 600 /pgpass; /entrypoint.sh;"
-    user: root
-    configs:
-      - source: servers.json
-        target: /pgadmin4/servers.json
-      - source: pgpass
-        target: /pgpass
 
 configs:
   pgpass:
