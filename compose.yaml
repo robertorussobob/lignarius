@@ -286,8 +286,8 @@ services:
     profiles: [ kafka_confluent, kafka_confluent-all, all-no-ui, all ]
     
   kafka:
-    #image: public.ecr.aws/bitnami/kafka:4.0.0-debian-12-r5
-    image: bitnami/kafka:latest
+    #image: public.ecr.aws/soldevelo/kafka:4.0.0-debian-12-r0
+    image: soldevelo/kafka:latest
     hostname: kafka
     container_name: kafka
     environment:
